@@ -1,0 +1,15 @@
+{
+  "name": "learning-npm",
+  "version": "1.0.0",
+  "description": "I'm learning npm",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Prajjaval Srivastava",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
