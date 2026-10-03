@@ -12,6 +12,8 @@ import com.prajjaval.urlshortener.exception.ResourceNotFoundException;
 
 import com.prajjaval.urlshortener.exception.ExpiredUrlException;
 
+import com.prajjaval.urlshortener.dto.UrlAnalyticsResponse;
+
 @Service
 public class UrlServiceImpl implements UrlService {
 
@@ -60,5 +62,54 @@ public class UrlServiceImpl implements UrlService {
         urlRepository.save(url);
 
         return url;
+    }
+    
+    @Override
+    public UrlAnalyticsResponse getAnalytics(String shortCode) {
+
+        UrlMapping url = urlRepository
+                .findByShortCode(shortCode)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Short URL not found"));
+
+        UrlAnalyticsResponse response = new UrlAnalyticsResponse();
+
+        response.setShortCode(url.getShortCode());
+        response.setOriginalUrl(url.getOriginalUrl());
+        response.setClickCount(url.getClickCount());
+        response.setCreatedAt(url.getCreatedAt());
+        response.setExpiresAt(url.getExpiresAt());
+
+        return response;
+    }
+    
+    @Override
+    public UrlAnalyticsResponse getUrlDetails(String shortCode) {
+
+        UrlMapping url = urlRepository
+                .findByShortCode(shortCode)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Short URL not found"));
+
+        UrlAnalyticsResponse response = new UrlAnalyticsResponse();
+
+        response.setShortCode(url.getShortCode());
+        response.setOriginalUrl(url.getOriginalUrl());
+        response.setClickCount(url.getClickCount());
+        response.setCreatedAt(url.getCreatedAt());
+        response.setExpiresAt(url.getExpiresAt());
+
+        return response;
+    }
+    
+    @Override
+    public void deleteUrl(String shortCode) {
+
+        UrlMapping url = urlRepository
+                .findByShortCode(shortCode)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Short URL not found"));
+
+        urlRepository.delete(url);
     }
 }
