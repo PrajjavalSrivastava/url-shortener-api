@@ -7,32 +7,29 @@ import java.time.LocalDateTime;
 
 public class CreateShortUrlRequest {
 
-    @NotBlank(message = "Original URL must not be blank")
+	@NotBlank(message = "Original URL must not be blank")
 
-    @Pattern(
-            regexp = "^(https?|ftp)://.*$",
-            message = "Please provide a valid URL starting with http:// or https://"
-    )
-    private String originalUrl;
+	@Pattern(regexp = "^(https?|ftp)://.*$", message = "Please provide a valid URL starting with http://, https://, or ftp://")
+	private String originalUrl;
 
-    private LocalDateTime expiresAt;
-    
-    public CreateShortUrlRequest() {
-    }
+	private LocalDateTime expiresAt;
 
-    public String getOriginalUrl() {
-        return originalUrl;
-    }
+	public CreateShortUrlRequest() {
+	}
 
-    public void setOriginalUrl(String originalUrl) {
-        this.originalUrl = originalUrl;
-    }
-    
-    public LocalDateTime getExpiresAt() {
-        return expiresAt;
-    }
+	public String getOriginalUrl() {
+		return originalUrl;
+	}
 
-    public void setExpiresAt(LocalDateTime expiresAt) {
-        this.expiresAt = expiresAt;
-    }
+	public void setOriginalUrl(String originalUrl) {
+		this.originalUrl = originalUrl;
+	}
+
+	public LocalDateTime getExpiresAt() {
+		return expiresAt;
+	}
+
+	public void setExpiresAt(LocalDateTime expiresAt) {
+		this.expiresAt = expiresAt;
+	}
 }

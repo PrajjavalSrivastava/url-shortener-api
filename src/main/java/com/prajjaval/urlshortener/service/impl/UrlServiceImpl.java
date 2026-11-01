@@ -14,102 +14,96 @@ import com.prajjaval.urlshortener.exception.ExpiredUrlException;
 
 import com.prajjaval.urlshortener.dto.UrlAnalyticsResponse;
 
+import org.springframework.transaction.annotation.Transactional;
+
 @Service
 public class UrlServiceImpl implements UrlService {
 
-    private final UrlRepository urlRepository;
+	private final UrlRepository urlRepository;
 
-    public UrlServiceImpl(UrlRepository urlRepository) {
-        this.urlRepository = urlRepository;
-    }
+	public UrlServiceImpl(UrlRepository urlRepository) {
+		this.urlRepository = urlRepository;
+	}
 
-    @Override
-    public UrlMapping createShortUrl(String originalUrl, LocalDateTime expiresAt) {
+	@Override
+	@Transactional
+	public UrlMapping createShortUrl(String originalUrl, LocalDateTime expiresAt) {
 
-        String shortCode;
+		String shortCode;
 
-        do {
-            shortCode = ShortCodeGenerator.generateShortCode();
-        } while (urlRepository.existsByShortCode(shortCode));
+		do {
+			shortCode = ShortCodeGenerator.generateShortCode();
+		} while (urlRepository.existsByShortCode(shortCode));
 
-        UrlMapping url = new UrlMapping();
+		UrlMapping url = new UrlMapping();
 
-        url.setOriginalUrl(originalUrl);
-        url.setShortCode(shortCode);
-        url.setCreatedAt(LocalDateTime.now());
-        url.setClickCount(0L);
-        url.setExpiresAt(expiresAt);
-        
-        return urlRepository.save(url);
-    }
-    
-    @Override
-    public UrlMapping getOriginalUrl(String shortCode) {
+		url.setOriginalUrl(originalUrl);
+		url.setShortCode(shortCode);
+		url.setCreatedAt(LocalDateTime.now());
+		url.setClickCount(0L);
+		url.setExpiresAt(expiresAt);
 
-        UrlMapping url = urlRepository
-                .findByShortCode(shortCode)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Short URL not found"));
+		return urlRepository.save(url);
+	}
 
-        if (url.getExpiresAt() != null &&
-                url.getExpiresAt().isBefore(LocalDateTime.now())) {
+	@Override
+	@Transactional
+	public UrlMapping getOriginalUrl(String shortCode) {
 
-            throw new ExpiredUrlException("Short URL has expired");
-        }
+		UrlMapping url = urlRepository.findByShortCode(shortCode)
+				.orElseThrow(() -> new ResourceNotFoundException("Short URL not found"));
 
-        url.setClickCount(url.getClickCount() + 1);
+		if (url.getExpiresAt() != null && url.getExpiresAt().isBefore(LocalDateTime.now())) {
 
-        urlRepository.save(url);
+			throw new ExpiredUrlException("Short URL has expired");
+		}
 
-        return url;
-    }
-    
-    @Override
-    public UrlAnalyticsResponse getAnalytics(String shortCode) {
+		url.setClickCount(url.getClickCount() + 1);
 
-        UrlMapping url = urlRepository
-                .findByShortCode(shortCode)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Short URL not found"));
+		urlRepository.save(url);
 
-        UrlAnalyticsResponse response = new UrlAnalyticsResponse();
+		return url;
+	}
 
-        response.setShortCode(url.getShortCode());
-        response.setOriginalUrl(url.getOriginalUrl());
-        response.setClickCount(url.getClickCount());
-        response.setCreatedAt(url.getCreatedAt());
-        response.setExpiresAt(url.getExpiresAt());
+	@Override
+	@Transactional(readOnly = true)
+	public UrlAnalyticsResponse getAnalytics(String shortCode) {
 
-        return response;
-    }
-    
-    @Override
-    public UrlAnalyticsResponse getUrlDetails(String shortCode) {
+		UrlMapping url = urlRepository.findByShortCode(shortCode)
+				.orElseThrow(() -> new ResourceNotFoundException("Short URL not found"));
 
-        UrlMapping url = urlRepository
-                .findByShortCode(shortCode)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Short URL not found"));
+		return mapToResponse(url);
+	}
 
-        UrlAnalyticsResponse response = new UrlAnalyticsResponse();
+	@Override
+	public UrlAnalyticsResponse getUrlDetails(String shortCode) {
 
-        response.setShortCode(url.getShortCode());
-        response.setOriginalUrl(url.getOriginalUrl());
-        response.setClickCount(url.getClickCount());
-        response.setCreatedAt(url.getCreatedAt());
-        response.setExpiresAt(url.getExpiresAt());
+		UrlMapping url = urlRepository.findByShortCode(shortCode)
+				.orElseThrow(() -> new ResourceNotFoundException("Short URL not found"));
 
-        return response;
-    }
-    
-    @Override
-    public void deleteUrl(String shortCode) {
+		return mapToResponse(url);
+	}
 
-        UrlMapping url = urlRepository
-                .findByShortCode(shortCode)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Short URL not found"));
+	@Override
+	@Transactional
+	public void deleteUrl(String shortCode) {
 
-        urlRepository.delete(url);
-    }
+		UrlMapping url = urlRepository.findByShortCode(shortCode)
+				.orElseThrow(() -> new ResourceNotFoundException("Short URL not found"));
+
+		urlRepository.delete(url);
+	}
+
+	private UrlAnalyticsResponse mapToResponse(UrlMapping url) {
+
+		UrlAnalyticsResponse response = new UrlAnalyticsResponse();
+
+		response.setShortCode(url.getShortCode());
+		response.setOriginalUrl(url.getOriginalUrl());
+		response.setClickCount(url.getClickCount());
+		response.setCreatedAt(url.getCreatedAt());
+		response.setExpiresAt(url.getExpiresAt());
+
+		return response;
+	}
 }

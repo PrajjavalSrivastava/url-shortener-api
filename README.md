@@ -31,15 +31,57 @@ A RESTful URL Shortener API built with Java and Spring Boot. This project genera
 
 ## Architecture
 
-The application follows a layered architecture:
+The application follows a layered architecture that separates HTTP handling, business logic, database operations, and supporting components.
 
-`Controller → Service → Repository → MySQL Database`
+### Application Architecture
 
-- **Controller:** Handles HTTP requests and responses.
-- **Service:** Contains business logic.
-- **Repository:** Performs database operations.
-- **Entity:** Represents URL records.
-- **DTOs:** Define API request and response payloads.
+```text
+                    CLIENT
+                      |
+                HTTP Requests
+                      |
+          +-----------+-----------+
+          |                       |
+    UrlController          RedirectController
+          |                       |
+          +-----------+-----------+
+                      |
+                  UrlService
+                   (Interface)
+                      |
+                UrlServiceImpl
+                 /          \
+                /            \
+       UrlRepository    ShortCodeGenerator
+              |
+          UrlMapping
+              |
+          MySQL Database
+```
+
+### Package Responsibilities
+
+| Package | Responsibility |
+|---|---|
+| controller | Handles REST API requests and HTTP responses |
+| service | Defines the URL service interface |
+| service.impl | Implements URL creation, redirection, analytics, and deletion logic |
+| repository | Handles database operations using Spring Data JPA |
+| entity | Defines the URL mapping database entity |
+| dto | Defines API request and response objects |
+| exception | Contains custom exceptions and global exception handling |
+| util | Provides short-code generation functionality |
+| config | Contains application configuration |
+
+### Request Processing
+
+1. The client sends an HTTP request to a controller.
+2. The controller delegates the operation to the `UrlService` interface.
+3. `UrlServiceImpl` executes the business logic.
+4. `UrlRepository` interacts with the database.
+5. The controller returns the appropriate HTTP response.
+
+The application uses constructor-based dependency injection to connect controllers with the service interface.
 
 ## Prerequisites
 
@@ -75,17 +117,116 @@ mvnw.cmd spring-boot:run
 
 The default application URL is `http://localhost:8080`, unless configured otherwise.
 
-## API Endpoints
+## API Usage Examples
 
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/api/v1/urls` | Create a short URL |
-| GET | `/{shortCode}` | Redirect to the original URL |
-| GET | `/api/v1/urls/{shortCode}` | Retrieve URL details |
-| GET | `/api/v1/urls/analytics/{shortCode}` | Retrieve click analytics |
-| DELETE | `/api/v1/urls/{shortCode}` | Delete a short URL |
+### 1. Create a Short URL
 
-Confirm the redirect path against `RedirectController.java` before publishing this table.
+**Endpoint:** `POST /api/v1/urls`
+
+**Request:**
+
+```http
+POST /api/v1/urls
+Content-Type: application/json
+```
+
+```json
+{
+  "originalUrl": "https://www.example.com/products",
+  "expiresAt": "2026-12-31T23:59:59"
+}
+```
+
+The `expiresAt` field is optional. If omitted or set to `null`, the URL does not have an expiration time.
+
+**Successful Response — 200 OK**
+
+```json
+{
+  "originalUrl": "https://www.example.com/products",
+  "shortCode": "aB12xY"
+}
+```
+
+### 2. Redirect to Original URL
+
+**Endpoint:** `GET /{shortCode}`
+
+**Example:**
+
+```http
+GET /aB12xY
+```
+
+**Response:** `302 Found`
+
+The response contains a `Location` header pointing to the original URL.
+
+### 3. Retrieve URL Details
+
+**Endpoint:** `GET /api/v1/urls/{shortCode}`
+
+**Example:**
+
+```http
+GET /api/v1/urls/aB12xY
+```
+
+**Successful Response — 200 OK**
+
+```json
+{
+  "shortCode": "aB12xY",
+  "originalUrl": "https://www.example.com/products",
+  "clickCount": 5,
+  "createdAt": "2026-11-01T10:30:00",
+  "expiresAt": "2026-12-31T23:59:59"
+}
+```
+
+### 4. Retrieve Click Analytics
+
+**Endpoint:** `GET /api/v1/urls/analytics/{shortCode}`
+
+**Example:**
+
+```http
+GET /api/v1/urls/analytics/aB12xY
+```
+
+**Successful Response — 200 OK**
+
+```json
+{
+  "shortCode": "aB12xY",
+  "originalUrl": "https://www.example.com/products",
+  "clickCount": 5,
+  "createdAt": "2026-11-01T10:30:00",
+  "expiresAt": "2026-12-31T23:59:59"
+}
+```
+
+Retrieving analytics does not increment the click count.
+
+### 5. Delete a Short URL
+
+**Endpoint:** `DELETE /api/v1/urls/{shortCode}`
+
+**Example:**
+
+```http
+DELETE /api/v1/urls/aB12xY
+```
+
+**Successful Response:** `204 No Content`
+
+### HTTP Error Responses
+
+| Status Code | Description |
+|---|---|
+| 400 Bad Request | Invalid request or validation failure |
+| 404 Not Found | Short URL does not exist |
+| 410 Gone | Short URL has expired |
 
 ## Swagger UI
 
