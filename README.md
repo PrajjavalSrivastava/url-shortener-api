@@ -14,19 +14,23 @@ A RESTful URL Shortener API built with Java and Spring Boot. This project genera
 - Handle errors through a global exception handler.
 - Explore endpoints using Swagger/OpenAPI.
 - Run automated tests using JUnit 5, Mockito, and MockMvc.
+- Run the application and MySQL database using Docker Compose.
+- Persist database records using a Docker named volume.
 
 ## Tech Stack
 
-- Java
+- Java 17
 - Spring Boot
 - Spring Web
 - Spring Data JPA and Hibernate
-- MySQL
+- MySQL 8
 - Maven
 - JUnit 5
 - Mockito
 - Spring MockMvc
 - Swagger/OpenAPI
+- Docker
+- Docker Compose
 - Git and GitHub
 
 ## Architecture
@@ -85,22 +89,29 @@ The application uses constructor-based dependency injection to connect controlle
 
 ## Prerequisites
 
-- A compatible JDK
-- MySQL Server
-- Maven, or the Maven Wrapper if available
+For local execution:
+
+- Java 17
+- MySQL 8
+- Maven, or the Maven Wrapper included in the repository
+
+For Docker execution:
+
+- Docker Desktop
+- Docker Compose
 
 ## Database Configuration
 
 Create a MySQL database named `url_shortener`, or update the JDBC URL in `application.properties` to match your configuration.
 
-Configure these Windows environment variables:
+The application expects these environment variables:
 
 - `DB_USERNAME` — your MySQL username
 - `DB_PASSWORD` — your MySQL password
 
 Never commit real passwords or other secrets to GitHub.
 
-## Run the Application
+## Run Locally
 
 Clone the repository:
 
@@ -109,13 +120,120 @@ git clone https://github.com/PrajjavalSrivastava/url-shortener-api.git
 cd url-shortener-api
 ```
 
-Configure the database and environment variables, then run the application from Eclipse or use Maven:
+Configure the database and set the required environment variables.
 
-```bash
+For Windows Command Prompt, for example:
+
+```cmd
+set DB_USERNAME=your_mysql_username
+set DB_PASSWORD=your_mysql_password
+```
+
+Run the application:
+
+```cmd
 mvnw.cmd spring-boot:run
 ```
 
-The default application URL is `http://localhost:8080`, unless configured otherwise.
+The default local application URL is:
+
+`http://localhost:8080`
+
+## Run Using Docker
+
+The project uses a multi-stage Dockerfile and Docker Compose to run the Spring Boot application and MySQL database in separate containers.
+
+### 1. Create the environment file
+
+In the project root, create a file named `.env`.
+
+Add the following configuration:
+
+```properties
+DB_USERNAME=urluser
+DB_PASSWORD=replace_with_your_password
+DB_ROOT_PASSWORD=replace_with_your_root_password
+```
+
+Replace the example values with your own credentials.
+
+**Important:** The `.env` file contains sensitive information and must not be committed to GitHub. It is excluded through `.gitignore`.
+
+### 2. Build and start the containers
+
+Run this command from the project root:
+
+```bash
+docker compose up --build -d
+```
+
+This command:
+
+- Builds the Spring Boot application Docker image.
+- Starts the MySQL container.
+- Waits for MySQL to become healthy.
+- Starts the Spring Boot application container.
+- Runs both services on the Docker Compose network.
+
+### 3. Verify running containers
+
+```bash
+docker compose ps
+```
+
+Check that:
+
+- `url-shortener-app` is running.
+- `url-shortener-mysql` is running and healthy.
+
+### 4. View application logs
+
+```bash
+docker compose logs --tail=50 app
+```
+
+To follow logs continuously:
+
+```bash
+docker compose logs -f app
+```
+
+### 5. Access the application
+
+When running through Docker Compose, the application is exposed on host port `8081`.
+
+Application:
+
+`http://localhost:8081`
+
+Swagger UI:
+
+`http://localhost:8081/swagger-ui/index.html`
+
+### 6. Stop and restart containers
+
+Stop the services:
+
+```bash
+docker compose stop
+```
+
+Start them again:
+
+```bash
+docker compose start
+```
+
+To remove the containers and recreate them:
+
+```bash
+docker compose down
+docker compose up -d
+```
+
+The named Docker volume `mysql_data` stores MySQL data separately from the containers. It allows database records to survive container stops and recreation.
+
+**Warning:** Avoid `docker compose down -v` unless you intentionally want to delete the database volume and its stored data.
 
 ## API Usage Examples
 
@@ -230,30 +348,40 @@ DELETE /api/v1/urls/aB12xY
 
 ## Swagger UI
 
-Start the application and open:
+For local execution:
 
 `http://localhost:8080/swagger-ui/index.html`
 
+For Docker execution:
+
+`http://localhost:8081/swagger-ui/index.html`
+
 ## Automated Tests
 
-Run the tests with:
+Run the tests using the Maven Wrapper:
 
-```bash
+```cmd
 mvnw.cmd test
 ```
 
 The project has completed a test run with **12 tests passed, zero failures, zero errors, and zero skipped tests**.
 
+The Dockerfile currently uses `-DskipTests` during image construction. Run the test command separately when you want to verify the test suite.
+
 ## What I Learned
 
-- Designing RESTful APIs
-- Implementing HTTP redirects
-- Building a layered Spring Boot application
-- Managing data using JPA and MySQL
-- Handling validation, exceptions, and URL expiration
-- Writing unit and controller tests
-- Documenting APIs using Swagger/OpenAPI
-- Managing configuration with environment variables
+- Designing RESTful APIs.
+- Implementing HTTP redirects.
+- Building a layered Spring Boot application.
+- Managing data using JPA and MySQL.
+- Handling validation, exceptions, and URL expiration.
+- Writing unit and controller tests.
+- Documenting APIs using Swagger/OpenAPI.
+- Managing configuration with environment variables.
+- Creating multi-stage Docker images.
+- Running application and database containers using Docker Compose.
+- Managing persistent database storage using Docker volumes.
+- Troubleshooting container startup and database connectivity.
 
 ## Author
 
